@@ -60,8 +60,8 @@ all: main-build
 main-build: inverter_18V_230V.elf secondary-outputs
 
 # Tool invocations
-inverter_18V_230V.elf inverter_18V_230V.map: $(OBJS) $(USER_OBJS) /home/ben/Documents/Inverter/STM32L476RGTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "inverter_18V_230V.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"/home/ben/Documents/Inverter/STM32L476RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="inverter_18V_230V.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+inverter_18V_230V.elf inverter_18V_230V.map: $(OBJS) $(USER_OBJS) /home/ben/Documents/inverter_18v_230v/Microcontroller_Code/STM32L476RGTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "inverter_18V_230V.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"/home/ben/Documents/inverter_18v_230v/Microcontroller_Code/STM32L476RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="inverter_18V_230V.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

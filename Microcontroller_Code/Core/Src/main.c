@@ -26,7 +26,7 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-
+typedef enum { Positiv_rising, Positiv_falling, Negative_falling, Negative_rising } states;
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -72,7 +72,8 @@ int main(void)
   /* USER CODE BEGIN 1 */
   int32_t CH1_DC = 0;
   int32_t UPPER_THRESHOLD = 43690;
-  int16_t STEP_SIZE = 100;
+  int16_t STEP_SIZE = UPPER_THRESHOLD/5;
+  states Wavestatus = Positiv_rising;
 
   /* USER CODE END 1 */
 
@@ -100,6 +101,8 @@ int main(void)
   /* USER CODE BEGIN 2 */
   // Start PWM
   HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
+  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
+  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
 
   /* USER CODE END 2 */
 
@@ -107,6 +110,42 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  switch(Wavestatus) {
+	  case Positiv_rising: {
+		  CH1_DC += STEP_SIZE;
+		  TIM2->CCR1 = CH1_DC;
+		  __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, CH1_DC);
+		  __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, 0);
+		  if (CH1_DC >= UPPER_THRESHOLD) Wavestatus = Positiv_falling;
+		  break;
+	  }
+	  case Positiv_falling: {
+		  CH1_DC -= STEP_SIZE;
+		  TIM2->CCR1 = CH1_DC;
+		  __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, CH1_DC);
+		  __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, 0);
+		  if (CH1_DC <= 0)  Wavestatus = Negative_falling;
+		  break;
+	  }
+	  case Negative_falling: {
+		  CH1_DC += STEP_SIZE;
+		  __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 0);
+		  __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, CH1_DC);
+		  if (CH1_DC >= UPPER_THRESHOLD)  Wavestatus = Negative_rising;
+		  break;
+	  }
+	  case Negative_rising: {
+		  CH1_DC -= STEP_SIZE;
+		  __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 0);
+		  __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, CH1_DC);
+		  if (CH1_DC <= 0)  Wavestatus = Positiv_rising;
+		  break;
+	  }
+	  }
+	  HAL_Delay(1);
+
+
+	  /*
 	  while(CH1_DC < UPPER_THRESHOLD)
 	  {
 		  TIM2->CCR1 = CH1_DC;
@@ -118,7 +157,8 @@ int main(void)
 		  TIM2->CCR1 = CH1_DC;
 		  CH1_DC -= STEP_SIZE;
 		  HAL_Delay(1);
-	  }
+	  }*/
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -246,7 +286,6 @@ static void MX_TIM3_Init(void)
 
   /* USER CODE END TIM3_Init 0 */
 
-  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
   TIM_MasterConfigTypeDef sMasterConfig = {0};
   TIM_OC_InitTypeDef sConfigOC = {0};
 
@@ -259,20 +298,7 @@ static void MX_TIM3_Init(void)
   htim3.Init.Period = 65535;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
-  if (HAL_TIM_ConfigClockSource(&htim3, &sClockSourceConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
   if (HAL_TIM_PWM_Init(&htim3) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  if (HAL_TIM_OC_Init(&htim3) != HAL_OK)
   {
     Error_Handler();
   }
@@ -290,8 +316,7 @@ static void MX_TIM3_Init(void)
   {
     Error_Handler();
   }
-  sConfigOC.OCMode = TIM_OCMODE_TIMING;
-  if (HAL_TIM_OC_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
+  if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
   {
     Error_Handler();
   }
